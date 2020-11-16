@@ -9,12 +9,16 @@ export default class App extends Component {
 		image: null,
 		file: null,
 		imageData: null,
+		canvas: null,
+		ctx: null,
 		contour: []
 	};
 
 	componentDidMount() {
 		const canvas = document.getElementById('canvas');
+		const ctx = canvas.getContext('2d');
 		canvas.addEventListener('mousedown', this.mouseDownHandler);
+		this.setState({ canvas, ctx });
 	}
 
 	selectFileHandler = (event) => {
@@ -30,33 +34,12 @@ export default class App extends Component {
 
 	onLoadImageHandler = () => {
 		this.renderImage();
-		// const canvas = document.getElementById('canvas');
-		// const ctx = canvas.getContext('2d');
-		// canvas.setAttribute('width', this.state.image.naturalWidth);
-		// canvas.setAttribute('height', this.state.image.naturalHeight);
-
-		// ctx.drawImage(this.state.image, 0, 0);
-		// const imageData = ctx.getImageData(0, 0, this.state.image.naturalWidth, this.state.image.naturalHeight);
-		// this.setState({ imageData: imageData });
-
-		// const pixels = imageData.data;
-
-		// for (let i = 0; i < pixels.length; i += 4) {
-		// 	if (i > 2550 && i < 12200) {
-		// 		pixels[i] = 0;
-		// 		pixels[i + 1] = 255;
-		// 		pixels[i + 2] = 255;
-		// 	}
-		// }
-
-		// ctx.putImageData(imageData, 0, 0);
 	};
 
 	renderImage() {
-		const canvas = document.getElementById('canvas');
-		const ctx = canvas.getContext('2d');
-		canvas.setAttribute('width', this.state.image.naturalWidth);
-		canvas.setAttribute('height', this.state.image.naturalHeight);
+		const { canvas, ctx, image } = this.state;
+		canvas.setAttribute('width', image.naturalWidth);
+		canvas.setAttribute('height', image.naturalHeight);
 		ctx.drawImage(this.state.image, 0, 0);
 	};
 
@@ -69,13 +52,11 @@ export default class App extends Component {
 	};
 
 	saveImage = () => {
-		const canvas = document.getElementById('canvas');
 		const link = document.getElementById('download-image');
-		link.setAttribute('href', canvas.toDataURL());
+		link.setAttribute('href', this.state.canvas.toDataURL());
 	};
 
 	toggleTool = () => {
-		console.log('tool is activated');
 		this.setState(prevState => ({ isToolActive: !prevState.isToolActive }));
 	};
 
@@ -83,27 +64,38 @@ export default class App extends Component {
 		if (!this.state.isToolActive)
 			return;
 
-		console.log('mousedown is occure');
+		const { ctx, contour } = this.state;
+		const { pageX: x, pageY: y } = event;
 
-		const { pageX, pageY } = event;
-		console.log(pageX, pageY);
-
-		if (this.state.contour.length >= 4) {
+		if (contour.length >= 4) {
 			console.log('countour has been filled');
 			return;
 		};
-		const coords = this.state.contour;
-		coords.push([pageX, pageY]);
-		this.setState({ contour: coords });
 
-		console.log(coords);
+		const coords = contour;
+		coords.push([x, y]);
+		this.setState({ contour: coords });
+		this.renderDot({ x, y });
 
 		if (coords.length !== 4)
 			return;
 
-		const canvas = document.getElementById('canvas');
-		const ctx = canvas.getContext('2d');
+		this.renderArtefact(coords);
+		this.setState({ contour: [], isToolActive: false });
+	};
 
+	renderDot({ x, y }) {
+		const { ctx } = this.state;
+		ctx.beginPath();
+		ctx.strokeStyle = 'red';
+		ctx.arc(x, y, 5, 0, 2 * Math.PI);
+		ctx.stroke();
+		ctx.closePath();
+	};
+
+	renderArtefact(coords) {
+		this.renderImage();
+		const { ctx } = this.state;
 		ctx.beginPath();
 		ctx.moveTo(coords[0][0], coords[0][1]);
 		coords.forEach(item => {
@@ -113,8 +105,6 @@ export default class App extends Component {
 		ctx.fillStyle = '#000';
 		ctx.fill();
 		ctx.closePath();
-
-		this.setState({ contour: [], isToolActive: false });
 	};
 
 	componentWillUnmount() {

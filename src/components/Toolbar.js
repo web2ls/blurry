@@ -25,7 +25,7 @@ export default class Toolbar extends Component {
         </div>
 
         <div class="toolbar-item" title="save image to disk" onClick={this.props.saveImage}>
-          <a id="download-image" download="edited_image.jpg">
+          <a id="download-image" download="edited_image.png">
             <FontAwesomeIcon icon={faSave} color='white' size='2x' />
           </a>
         </div>
